@@ -6,6 +6,12 @@ admin.initializeApp({
     databaseURL: process.env.FIREBASE_DATABASE_URL,
 })
 
-const db = admin.firestore();
+try{
+    const db = admin.firestore();
+    console.log('Firebase Connected Successfully');
+    module.exports = db;
+}catch(error){
+    console.error('Error Connecting to Firebase', error);
+    throw error;
+}
  
-module.exports = db;

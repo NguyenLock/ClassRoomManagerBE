@@ -56,6 +56,13 @@ exports.verifyAccessCode = async (req, res) =>{
         await docRef.delete();
 
         const userDoc = await db.collection('users').doc(phoneNumber).get();
+        if(!userDoc.exists){
+            await db.collection('users').doc(phoneNumber).set({
+                phoneNumber: phoneNumber,
+                userType: 'student',
+                createdAt: new Date().toISOString()
+            })
+        }
         let userType = 'student';
         if(userDoc.exists){
             userType = userDoc.data().userType || 'student';
