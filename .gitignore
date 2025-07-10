@@ -8,6 +8,10 @@ yarn.lock
 .env.local
 .env.*.local
 
+# Firebase Admin SDK
+*firebase-adminsdk*.json
+firebase-admin.json
+
 # Logs
 logs
 *.log
