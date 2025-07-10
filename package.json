@@ -1,7 +1,8 @@
 {
   "name": "classroom_management_be",
   "version": "1.0.0",
-  "description": "",
+  "description": "Backend for Classroom Management App",
+  "author": "Nguyen Tan Loc",
   "main": "index.js",
   "scripts": {
     "start": "nodemon src/index.js",
