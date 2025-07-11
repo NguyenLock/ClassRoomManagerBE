@@ -1,11 +1,30 @@
-module.exports = (req,res ,next) =>{
-    const phoneNumber = req.headers['x-phone-number'] || req.body.phoneNumber;
+const jwt = require('jsonwebtoken');
 
-    if(!phoneNumber){
+module.exports = (req,res ,next) =>{
+   const authHeader = req.headers['authorization'];
+    if(!authHeader){
         return res.status(401).json({
-            error:'Unauthorized. Missing Phone Number.'
+            error: 'Unauthorized. Missing Authorization Header.'
         });
     }
-    req.phoneNumber = phoneNumber;
-    next();
+    const tokenParts = authHeader.split(' ');
+    if(tokenParts.length !==2 || tokenParts[0] !== 'Bearer'){
+        return res.status(401).json({
+            error: 'Unauthorized. Invalid Authorization Header Format.'
+        })
+    }
+    const token = tokenParts[1];
+
+    try{
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        req.user = decoded;
+        req.phoneNumber = decoded.phoneNumber;
+        req.userType = decoded.userType;
+        next();
+    }catch(error){
+        return res.status(401).json({
+            error: 'Unauthorized. Invalid Token.'
+        });
+    }
 }

@@ -1,3 +1,5 @@
+const jwt = require('jsonwebtoken');
+// const AccessToken = require('twilio/lib/jwt/AccessToken');
 const db = require('../config/firebase')
 const {client, fromPhone} = require('../config/twilio');
 const generate6Code = require('../utils/generateCode');
@@ -55,19 +57,29 @@ exports.verifyAccessCode = async (req, res) =>{
         }
         await docRef.delete();
 
-        const userDoc = await db.collection('users').doc(phoneNumber).get();
+        const userRef = db.collection('users').doc(phoneNumber);
+        const userDoc = await userRef.get();
+
         if(!userDoc.exists){
-            await db.collection('users').doc(phoneNumber).set({
+            await userRef.set({
                 phoneNumber: phoneNumber,
                 userType: 'student',
                 createdAt: new Date().toISOString()
             })
         }
+
         let userType = 'student';
         if(userDoc.exists){
             userType = userDoc.data().userType || 'student';
         }
-        res.json({success: true, userType});
+        const tokenPayload = {
+            phoneNumber: phoneNumber,
+            userType
+        };
+        const token = jwt.sign(tokenPayload, process.env.JWT_SECRET,{
+            expiresIn: process.env.JWT_EXPIRES_IN
+        });
+        res.json({success: true, userType, accessToken: token});
     }catch(error){
         console.error('Error Verifying Access Code', error);
         res.status(500).json({
