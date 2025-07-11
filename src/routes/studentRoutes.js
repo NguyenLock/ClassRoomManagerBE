@@ -13,5 +13,9 @@ router.post(
   validateMiddleware(["name", "phoneNumber", "email"]),
   studentController.addStudent
 );
-
+router.post(
+  "/assignLesson",
+  validateMiddleware(["studentPhone", "title", "description"]),
+  studentController.assignLesson
+)
 module.exports = router
