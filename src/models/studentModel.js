@@ -71,4 +71,32 @@ exports.getStudentByPhone = async ({phoneNumber}) =>{
     }catch(error){
         throw error;
     }
+};
+exports.editStudentByPhone = async ({phoneNumber, updateData}) =>{
+    try{
+        const studentRef = studentsCollection.doc(phoneNumber);
+        const studentDoc = await studentRef.get();
+        if(!studentDoc.exists){
+            throw new Error('Student not found');
+        }
+        await studentRef.update(updateData);
+        const updatedStudent = await studentRef.get();
+        return updatedStudent.data();
+    }catch(error){
+        console.error('Error editing student', error);
+        throw error;
+    }
+};
+exports.deleteStudentByPhone = async ({phoneNumber}) =>{
+    try{
+        const studentRef = studentsCollection.doc(phoneNumber);
+        const studentDoc = await studentRef.get();
+        if(!studentDoc.exists){
+            throw new Error('Student not found');
+        }
+        await studentRef.delete();
+    }catch(error){
+        console.error('Error deleting student', error);
+        throw error;
+    }
 }

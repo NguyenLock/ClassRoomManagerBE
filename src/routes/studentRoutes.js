@@ -20,4 +20,6 @@ router.post(
 )
 router.get("/getAllStudents", studentController.getAllStudents);
 router.get("/getStudentByPhone/:phoneNumber", studentController.getStudentByPhone);
+router.put("/editStudentByPhone/:phoneNumber", studentController.editStudentByPhone);
+router.delete("/deleteStudentByPhone/:phoneNumber", studentController.deleteStudentByPhone);
 module.exports = router
