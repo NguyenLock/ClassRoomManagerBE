@@ -45,3 +45,30 @@ exports.assignLesson = async ({studentPhone, title, description}) =>{
         throw error;
     }
 };
+exports.getAllStudents = async () =>{
+    try{
+        const getStudents = await studentsCollection.get();
+        return getStudents.docs.map(doc =>{
+            const StudentData = doc.data();
+            return{
+                name: StudentData.name,
+                phoneNumber: StudentData.phoneNumber,
+                email: StudentData.email,
+            }
+        });
+    }catch(error){
+        console.error('Error getting all students', error);
+        throw error;
+    }
+};
+exports.getStudentByPhone = async ({phoneNumber}) =>{
+    try{
+        const doc = await studentsCollection.doc(phoneNumber).get();
+        if(!doc.exists){
+            return null;
+        }
+        return doc.data();
+    }catch(error){
+        throw error;
+    }
+}

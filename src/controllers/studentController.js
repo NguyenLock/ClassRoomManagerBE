@@ -47,3 +47,32 @@ exports.assignLesson = async (req, res) =>{
         });
     }
 };
+exports.getAllStudents = async (req, res) =>{
+    try{
+        const students = await studentModel.getAllStudents();
+        res.status(200).json({
+            success: true,
+            students
+        });
+    }catch(error){
+        res.status(500).json({
+            error: 'Internal Server Error'
+        })
+    }
+}
+exports.getStudentByPhone = async (req, res) =>{
+    try{
+        const {phoneNumber} = req.params;;
+        const student = await studentModel.getStudentByPhone({phoneNumber});
+        if(!student){
+            return res.status(404).json({
+                error: 'Student not found'
+            })
+        }
+        res.status(200).json({student})
+    }catch(error){
+        res.status(500).json({
+            error: 'Internal Server Error'
+        })
+    }
+}

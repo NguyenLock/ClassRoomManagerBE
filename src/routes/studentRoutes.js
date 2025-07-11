@@ -18,4 +18,6 @@ router.post(
   validateMiddleware(["studentPhone", "title", "description"]),
   studentController.assignLesson
 )
+router.get("/getAllStudents", studentController.getAllStudents);
+router.get("/getStudentByPhone/:phoneNumber", studentController.getStudentByPhone);
 module.exports = router
