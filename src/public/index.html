@@ -114,7 +114,7 @@
         let currentUserType;
         let currentUserIdentifier;
 
-        // Login function
+        
         function handleLogin() {
             const token = document.getElementById('token').value;
             const userType = document.getElementById('userType').value;
@@ -124,13 +124,13 @@
                     throw new Error('Please enter your token');
                 }
 
-                // Initialize socket connection with token
+                
                 initializeSocket(token, userType);
                 
-                // Show chat container
+                
                 document.getElementById('chatContainer').style.display = 'block';
                 
-                // Show/hide recipient input based on user type
+                
                 document.getElementById('recipientEmail').style.display = 
                     userType === 'instructor' ? 'block' : 'none';
                 
