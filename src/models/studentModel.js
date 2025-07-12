@@ -22,7 +22,7 @@ exports.addStudent = async ({name, phoneNumber, email}) => {
         throw error;
     }
 };
-exports.assignLesson = async ({studentPhone, title, description}) =>{
+exports.assignLesson = async ({studentPhone, title, description, lessonId}) =>{
     try{
         const studentRef = studentsCollection.doc(studentPhone);
         const studentDoc = await studentRef.get();
@@ -34,9 +34,11 @@ exports.assignLesson = async ({studentPhone, title, description}) =>{
         const lessons = studentData.lessons || [];
 
         lessons.push({
+            lessonId,
             title,
             description,
             assignedAt: new Date().toISOString(),
+            status: 'pending'
         });
         await studentRef.update({lessons});
         return lessons;

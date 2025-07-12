@@ -1,4 +1,5 @@
 const studentModel = require("../models/studentModel");
+const { v4: uuidv4 } = require("uuid");
 
 exports.addStudent = async (req, res) => {
   try {
@@ -32,10 +33,12 @@ exports.assignLesson = async (req, res) => {
         error: "Missing required fields",
       });
     }
+    const lessonId = uuidv4();
     const lessons = await studentModel.assignLesson({
       studentPhone,
       title,
       description,
+      lessonId,
     });
     res.status(201).json({
       message: "Lesson assigned successfully",

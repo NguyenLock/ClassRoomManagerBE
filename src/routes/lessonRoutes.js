@@ -5,5 +5,6 @@ const authMiddleware = require("../middlewares/authMiddleware");
 
 router.use(authMiddleware);
 router.get("/mylessons", lessonController.getMyLessons);
+router.post("/mark-done", lessonController.markLessonDone);
 
 module.exports = router;
