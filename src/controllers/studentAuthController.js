@@ -2,6 +2,7 @@ const db = require("../config/firebase");
 const transporter = require("../config/email");
 const generate6Code = require("../utils/generateCode");
 const jwt = require("jsonwebtoken");
+const studentModel = require('../models/studentModel');
 
 exports.loginEmail = async (req, res) => {
   try {
@@ -120,3 +121,57 @@ exports.validateAccessCode = async (req, res) => {
     });
   }
 };
+exports.editProfile = async (req, res) => {
+  try{
+    const {name, email, phoneNumber} = req.body;
+    if(req.user.userType !== 'student'){
+      return res.status(403).json({
+        error: "Access denied. Student only."
+      });
+    }
+    if(req.user.email !== email){
+      return res.status(403).json({
+        error: "You can only edit your own profile"
+      });
+    }
+    if(!name || !email || !phoneNumber){
+      return res.status(400).json({
+        error: "All fields are required"
+      });
+    }
+
+    const updatedDataStudent = await studentModel.editStudentProfile({
+      currentEmail: req.user.email,
+      updateData:{
+        name,
+        email,
+        phoneNumber
+      }
+    });
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      data:{
+        user:{
+          name: updatedDataStudent.name,
+          email: updatedDataStudent.email,
+          phoneNumber: updatedDataStudent.phoneNumber
+        }
+      }
+    });
+  }catch(error){
+    if(error.message === 'Student not found'){
+      return res.status(404).json({
+        error: "Student not found"
+      });
+    }
+    if(error.message === 'Email already exists'){
+      return res.status(400).json({
+        error: "Email already exists"
+      });
+    }
+    return res.status(500).json({
+      error: "Internal Server Error"
+    });
+  }
+}

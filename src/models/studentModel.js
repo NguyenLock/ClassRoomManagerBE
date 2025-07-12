@@ -102,3 +102,33 @@ exports.deleteStudentByPhone = async ({phoneNumber}) =>{
         throw error;
     }
 }
+exports.editStudentProfile = async ({currentEmail, updateData}) =>{
+    try{
+        const studentRef = db.collection("students");
+        const currentStudent = await studentRef.where("email", "==", currentEmail).get();
+
+        if(currentStudent.empty){
+            throw new Error('Student not found');
+        };
+        const currentStudentDoc = currentStudent.docs[0];
+        const currentStudentData = currentStudentDoc.data();
+
+        if(updateData.email !== currentEmail){
+            const newEmailQuery = await studentRef.where("email", "==", updateData.email).get();
+            if(!newEmailQuery.empty){
+                throw new Error('Email already exists');
+            }
+        }
+       const updatedData = {
+        ...currentStudentData,
+        name: updateData.name,
+        email: updateData.email,
+        phoneNumber: updateData.phoneNumber,
+        updatedAt: new Date().toISOString()
+       };
+       await studentRef.doc(currentStudentDoc.id).update(updatedData);
+       return updatedData;
+    }catch(error){
+        throw error;
+    }
+}
