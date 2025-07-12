@@ -4,6 +4,8 @@ const http = require('http');
 const path = require('path');
 const initializeSocket = require('./socket');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 
 const authRoutes = require('./routes/authRoutes');
 const studentRoutes = require('./routes/studentRoutes');
@@ -15,6 +17,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/auth', authRoutes);
 app.use('/instructor', studentRoutes);
@@ -28,6 +32,6 @@ const server = http.createServer(app);
 const io = initializeSocket(server);
 
 server.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`Server is running on http://localhost:${port}/api-docs`);
 });
 
