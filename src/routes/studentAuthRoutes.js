@@ -1,9 +1,15 @@
 const express = require("express");
 const router = express.Router();
 const studentAuthController = require("../controllers/studentAuthController");
+const studentController = require("../controllers/studentController");
 const validateMiddleware = require("../middlewares/validateMiddleware");
 const authMiddleware = require("../middlewares/authMiddleware");
 
+router.post(
+  "/setup-account/:verificationToken",
+  validateMiddleware(["name", "phoneNumber", "password"]),
+  studentController.setupAccount
+);
 router.post(
   "/login-email",
   validateMiddleware(["email"]),

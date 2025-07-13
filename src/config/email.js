@@ -27,7 +27,8 @@ const sendVerificationEmail = async ({ email, verificationToken }) => {
       html: `
             <h1>Welcome to the ClassRoom App</h1>
             <p>Click the link below to verify your email</p>
-            <a href="${process.env.FRONTEND_URL}/setup-account/${verificationToken}">Verify email</a>
+            <a href="${process.env.FRONTEND_URL}/student-auth/setup-account/${verificationToken}">Verify email</a>
+            <p>This link will expire in 1 day.</p>
             <p>If you did not request this verification, please ignore this email.</p>
             `,
     };

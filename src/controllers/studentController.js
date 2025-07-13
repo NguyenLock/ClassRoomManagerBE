@@ -1,6 +1,8 @@
 const studentModel = require("../models/studentModel");
 const { v4: uuidv4 } = require("uuid");
 const { sendVerificationEmail } = require("../config/email");
+const { hashPassword } = require("../utils/passwordHash");
+
 exports.addStudent = async (req, res) => {
   try{
     const {email} = req.body;
@@ -43,6 +45,64 @@ exports.addStudent = async (req, res) => {
     })
   }
 };
+
+exports.setupAccount = async (req, res) => {
+  try {
+    const { verificationToken } = req.params;
+    const { name, phoneNumber, password } = req.body;
+
+    console.log("Setup account request:", { verificationToken, name, phoneNumber });
+
+    if (!name || !phoneNumber || !password) {
+      return res.status(400).json({
+        error: "Missing required fields",
+      });
+    }
+
+    const student = await studentModel.findByVerificationToken({ verificationToken });
+    console.log("Found student:", student);
+
+    if (!student) {
+      return res.status(404).json({
+        error: "Invalid verification token",
+      });
+    }
+
+    if (new Date() > new Date(student.tokenExpiry)) {
+      return res.status(400).json({
+        error: "Verification token expired",
+      });
+    }
+
+    const hashedPassword = await hashPassword(password);
+
+    const updatedStudent = await studentModel.setupAccount({
+      verificationToken,
+      name,
+      phoneNumber,
+      password: hashedPassword,
+    });
+
+    res.status(200).json({
+      message: "Account setup successfully",
+      success: true
+    });
+
+  } catch (error) {
+    console.error("Setup account error:", error);
+
+    if (error.message === "Account already setup") {
+      return res.status(400).json({
+        error: error.message,
+      });
+    }
+    res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message
+    });
+  }
+};
+
 exports.assignLesson = async (req, res) => {
   try {
     const { studentPhone, title, description } = req.body;
@@ -75,6 +135,7 @@ exports.assignLesson = async (req, res) => {
     });
   }
 };
+
 exports.getAllStudents = async (req, res) => {
   try {
     const students = await studentModel.getAllStudents();
@@ -88,6 +149,7 @@ exports.getAllStudents = async (req, res) => {
     });
   }
 };
+
 exports.getStudentByPhone = async (req, res) => {
   try {
     const { phoneNumber } = req.params;
@@ -104,6 +166,7 @@ exports.getStudentByPhone = async (req, res) => {
     });
   }
 };
+
 exports.editStudentByPhone = async (req, res) => {
   try {
     const { phoneNumber } = req.params;
@@ -128,6 +191,7 @@ exports.editStudentByPhone = async (req, res) => {
     });
   }
 };
+
 exports.deleteStudentByPhone = async (req, res) => {
   try {
     const { phoneNumber } = req.params;

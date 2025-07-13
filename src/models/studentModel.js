@@ -13,12 +13,14 @@ exports.addStudent = async ({ email, verificationToken }) => {
     const studentInfo = {
       email: email,
       verificationToken: verificationToken,
+      tokenExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
       isVerified: false,
       accountSetup: false,
       lessons: [],
       createdAt: new Date().toISOString(),
       name: null,
       phoneNumber: null,
+      password: null,
     };
     await studentsCollection.doc(verificationToken).set(studentInfo);
     return studentInfo;
@@ -50,38 +52,44 @@ exports.findByVerificationToken = async ({ verificationToken }) => {
     throw error;
   }
 };
-exports.setupAccount = async ({
-  verificationToken,
-  name,
-  phoneNumber,
-  password,
-}) => {
+exports.setupAccount = async ({ verificationToken, name, phoneNumber, password }) => {
   try {
-    const studentRef = studentsCollection.doc(verificationToken);
-    const studentDoc = await studentRef.get();
+    
+    const studentQuery = await studentsCollection.where('verificationToken', '==', verificationToken).get();
+    
+    if (studentQuery.empty) {
+      throw new Error('Invalid verification token');
+    }
 
-    if (!studentDoc.exists) {
-      throw new Error("Invalid verification token");
-    }
-    const studentData = studentDoc.data();
-    if (studentData.accountSetup) {
-      throw new Error("Account already setup");
-    }
-    const updatedData = {
-      ...studentData,
+    const studentDoc = studentQuery.docs[0];
+    const student = studentDoc.data();
+
+    
+    console.log('Before update - Student doc:', studentDoc.id);
+
+    
+    await studentsCollection.doc(studentDoc.id).update({
       name: name,
       phoneNumber: phoneNumber,
       password: password,
-      isVerified: true,
       accountSetup: true,
-      verificationToken: null,
-      updatedAt: new Date().toISOString(),
-    };
-    await studentsCollection.doc(verificationToken).update(updatedData);
+      isVerified: true,
+      updatedAt: new Date().toISOString()
+    });
 
-    await studentRef.delete();
-    return updatedData;
+    
+    console.log('After update - Updated student info');
+
+    
+    return {
+      email: student.email,
+      name: name,
+      phoneNumber: phoneNumber,
+      isVerified: true,
+      accountSetup: true
+    };
   } catch (error) {
+    console.error('Error in setupAccount:', error);
     throw error;
   }
 };
