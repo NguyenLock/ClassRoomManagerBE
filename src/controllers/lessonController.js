@@ -202,3 +202,22 @@ exports.getLessonById = async (req, res) => {
     });
   }
 };
+
+exports.getAllLessons = async (req, res) => {
+  try {
+    const lessons = await lessonModel.getAllLessons();
+
+    return res.status(200).json({
+      success: true,
+      total: lessons.length,
+      lessons,
+    });
+
+  } catch (error) {
+    console.error("Error in getAllLessons:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal Server Error",
+    });
+  }
+};

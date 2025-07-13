@@ -107,3 +107,57 @@ exports.getLessonById = async (lessonId) => {
     throw error;
   }
 };
+exports.getAllLessons = async () => {
+  try {
+    const lessonsRef = db.collection("lessons");
+    const studentsRef = db.collection("students");
+
+    const lessonsSnapshot = await lessonsRef.get();
+    if (lessonsSnapshot.empty) {
+      return [];
+    }
+
+    const studentsSnapshot = await studentsRef.get();
+    const students = studentsSnapshot.docs.map((doc) => doc.data());
+
+    const lessons = await Promise.all(
+      lessonsSnapshot.docs.map(async (doc) => {
+        const lessonData = doc.data();
+
+        let totalStudents = 0;
+        let completedStudents = 0;
+
+        students.forEach((student) => {
+          if (student.lessons) {
+            const lessonForStudent = student.lessons.find(
+              (l) => l.lessonId === lessonData.lessonId
+            );
+            if (lessonForStudent) {
+              totalStudents++;
+              if (lessonForStudent.status === "completed") {
+                completedStudents++;
+              }
+            }
+          }
+        });
+
+        return {
+          ...lessonData,
+          id: doc.id,
+          studentStats: {
+            total: totalStudents,
+            completed: completedStudents,
+            inProgress: totalStudents - completedStudents,
+          },
+        };
+      })
+    );
+
+    return lessons.sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+  } catch (error) {
+    console.error("Error getting all lessons:", error);
+    throw error;
+  }
+};

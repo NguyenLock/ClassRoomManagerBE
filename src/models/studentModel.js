@@ -91,14 +91,18 @@ exports.setupAccount = async ({
     throw error;
   }
 };
-exports.assignLesson = async ({
-  studentPhone,
-  title,
-  description,
-  lessonId,
-}) => {
+exports.assignLesson = async ({ studentPhone, lessonId }) => {
   try {
     let formattedPhone = studentPhone.replace(/\s+/g, "");
+
+    const lessonsRef = db.collection("lessons");
+    const lessonDoc = await lessonsRef.doc(lessonId).get();
+
+    if (!lessonDoc.exists) {
+      throw new Error("Lesson not found");
+    }
+
+    const lessonData = lessonDoc.data();
 
     const studentsRef = db.collection("students");
     const studentQuery = await studentsRef
@@ -113,10 +117,17 @@ exports.assignLesson = async ({
     const studentData = studentDoc.data();
     const lessons = studentData.lessons || [];
 
+    const existingLesson = lessons.find(
+      (lesson) => lesson.lessonId === lessonId
+    );
+    if (existingLesson) {
+      throw new Error("Lesson already assigned to this student");
+    }
+
     lessons.push({
       lessonId,
-      title,
-      description,
+      title: lessonData.title,
+      description: lessonData.description,
       assignedAt: new Date().toISOString(),
       status: "pending",
     });

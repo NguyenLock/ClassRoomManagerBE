@@ -109,29 +109,26 @@ exports.setupAccount = async (req, res) => {
 
 exports.assignLesson = async (req, res) => {
   try {
-    const { studentPhone, title, description } = req.body;
-    if (!studentPhone || !title || !description) {
+    const { studentPhone, lessonId } = req.body;
+    if (!studentPhone || !lessonId) {
       return res.status(400).json({
-        error: "Missing required fields",
+        error: "Student phone and lesson ID are required",
       });
     }
-
-    const lessonId = uuidv4();
-    const results = {
-      success: [],
-      failed: [],
-    };
 
     const phoneNumbers = Array.isArray(studentPhone)
       ? studentPhone
       : [studentPhone];
 
+    const results = {
+      success: [],
+      failed: [],
+    };
+
     for (const phone of phoneNumbers) {
       try {
         const lessons = await studentModel.assignLesson({
           studentPhone: phone,
-          title,
-          description,
           lessonId,
         });
         results.success.push({
@@ -152,6 +149,16 @@ exports.assignLesson = async (req, res) => {
         const error = results.failed[0];
         if (error.error === "Student not found") {
           return res.status(404).json({
+            error: error.error,
+          });
+        }
+        if (error.error === "Lesson not found") {
+          return res.status(404).json({
+            error: error.error,
+          });
+        }
+        if (error.error === "Lesson already assigned to this student") {
+          return res.status(400).json({
             error: error.error,
           });
         }
