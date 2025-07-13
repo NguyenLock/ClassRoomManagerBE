@@ -52,44 +52,42 @@ exports.findByVerificationToken = async ({ verificationToken }) => {
     throw error;
   }
 };
-exports.setupAccount = async ({ verificationToken, name, phoneNumber, password }) => {
+exports.setupAccount = async ({
+  verificationToken,
+  name,
+  phoneNumber,
+  password,
+}) => {
   try {
-    
-    const studentQuery = await studentsCollection.where('verificationToken', '==', verificationToken).get();
-    
+    const studentQuery = await studentsCollection
+      .where("verificationToken", "==", verificationToken)
+      .get();
+
     if (studentQuery.empty) {
-      throw new Error('Invalid verification token');
+      throw new Error("Invalid verification token");
     }
 
     const studentDoc = studentQuery.docs[0];
     const student = studentDoc.data();
 
-    
-    console.log('Before update - Student doc:', studentDoc.id);
-
-    
     await studentsCollection.doc(studentDoc.id).update({
       name: name,
       phoneNumber: phoneNumber,
       password: password,
       accountSetup: true,
       isVerified: true,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     });
 
-    
-    console.log('After update - Updated student info');
-
-    
     return {
       email: student.email,
       name: name,
       phoneNumber: phoneNumber,
       isVerified: true,
-      accountSetup: true
+      accountSetup: true,
     };
   } catch (error) {
-    console.error('Error in setupAccount:', error);
+    console.error("Error in setupAccount:", error);
     throw error;
   }
 };
@@ -100,12 +98,18 @@ exports.assignLesson = async ({
   lessonId,
 }) => {
   try {
-    const studentRef = studentsCollection.doc(studentPhone);
-    const studentDoc = await studentRef.get();
+    let formattedPhone = studentPhone.replace(/\s+/g, "");
 
-    if (!studentDoc.exists) {
+    const studentsRef = db.collection("students");
+    const studentQuery = await studentsRef
+      .where("phoneNumber", "==", formattedPhone)
+      .get();
+
+    if (studentQuery.empty) {
       throw new Error("Student not found");
     }
+
+    const studentDoc = studentQuery.docs[0];
     const studentData = studentDoc.data();
     const lessons = studentData.lessons || [];
 
@@ -116,7 +120,8 @@ exports.assignLesson = async ({
       assignedAt: new Date().toISOString(),
       status: "pending",
     });
-    await studentRef.update({ lessons });
+
+    await studentsRef.doc(studentDoc.id).update({ lessons });
     return lessons;
   } catch (error) {
     console.error("Error assigning lesson", error);
@@ -145,11 +150,11 @@ exports.getStudentByEmail = async ({ email }) => {
   try {
     const studentRef = db.collection("students");
     const studentQuery = await studentRef.where("email", "==", email).get();
-    
+
     if (studentQuery.empty) {
       return null;
     }
-    
+
     return studentQuery.docs[0].data();
   } catch (error) {
     console.error("Error getting student by email:", error);
@@ -228,7 +233,7 @@ exports.deleteStudentByEmail = async ({ email }) => {
   try {
     const studentRef = db.collection("students");
     const studentQuery = await studentRef.where("email", "==", email).get();
-    
+
     if (studentQuery.empty) {
       throw new Error("Student not found");
     }
