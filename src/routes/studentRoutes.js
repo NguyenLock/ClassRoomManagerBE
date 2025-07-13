@@ -19,7 +19,8 @@ router.post(
   studentController.assignLesson
 )
 router.get("/getAllStudents", studentController.getAllStudents);
-router.get("/getStudentByPhone/:phoneNumber", studentController.getStudentByPhone);
-router.put("/editStudentByPhone/:phoneNumber", studentController.editStudentByPhone);
-router.delete("/deleteStudentByPhone/:phoneNumber", studentController.deleteStudentByPhone);
+router.get("/getStudentByEmail/:email", studentController.getStudentByEmail);
+router.put("/editStudentByEmail/:email", studentController.editStudentByEmail);
+router.delete("/deleteStudentByEmail/:email", studentController.deleteStudentByEmail);
+
 module.exports = router

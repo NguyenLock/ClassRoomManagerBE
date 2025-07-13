@@ -150,16 +150,19 @@ exports.getAllStudents = async (req, res) => {
   }
 };
 
-exports.getStudentByPhone = async (req, res) => {
+exports.getStudentByEmail = async (req, res) => {
   try {
-    const { phoneNumber } = req.params;
-    const student = await studentModel.getStudentByPhone({ phoneNumber });
+    const { email } = req.params;
+    const student = await studentModel.getStudentByEmail({ email });
     if (!student) {
       return res.status(404).json({
         error: "Student not found",
       });
     }
-    res.status(200).json({ student });
+    res.status(200).json({ 
+      success: true,
+      student 
+    });
   } catch (error) {
     res.status(500).json({
       error: "Internal Server Error",
@@ -167,18 +170,13 @@ exports.getStudentByPhone = async (req, res) => {
   }
 };
 
-exports.editStudentByPhone = async (req, res) => {
+exports.deleteStudentByEmail = async (req, res) => {
   try {
-    const { phoneNumber } = req.params;
-    const updateData = req.body;
-    const updatedStudent = await studentModel.editStudentByPhone({
-      phoneNumber,
-      updateData,
-    });
+    const { email } = req.params;
+    await studentModel.deleteStudentByEmail({ email });
     res.json({
-      message: "Student updated successfully",
+      message: "Student deleted successfully",
       success: true,
-      updatedStudent,
     });
   } catch (error) {
     if (error.message === "Student not found") {
@@ -192,17 +190,27 @@ exports.editStudentByPhone = async (req, res) => {
   }
 };
 
-exports.deleteStudentByPhone = async (req, res) => {
+exports.editStudentByEmail = async (req, res) => {
   try {
-    const { phoneNumber } = req.params;
-    await studentModel.deleteStudentByPhone({ phoneNumber });
+    const { email } = req.params;
+    const updateData = req.body;
+    const updatedStudent = await studentModel.editStudentByEmail({
+      email,
+      updateData,
+    });
     res.json({
-      message: "Student deleted successfully",
+      message: "Student updated successfully",
       success: true,
+      updatedStudent,
     });
   } catch (error) {
     if (error.message === "Student not found") {
       return res.status(404).json({
+        error: error.message,
+      });
+    }
+    if (error.message === "Email already exists") {
+      return res.status(400).json({
         error: error.message,
       });
     }

@@ -132,6 +132,8 @@ exports.getAllStudents = async () => {
         name: StudentData.name,
         phoneNumber: StudentData.phoneNumber,
         email: StudentData.email,
+        accountSetup: StudentData.accountSetup,
+        createdAt: StudentData.createdAt,
       };
     });
   } catch (error) {
@@ -139,42 +141,52 @@ exports.getAllStudents = async () => {
     throw error;
   }
 };
-exports.getStudentByPhone = async ({ phoneNumber }) => {
+exports.getStudentByEmail = async ({ email }) => {
   try {
-    const doc = await studentsCollection.doc(phoneNumber).get();
-    if (!doc.exists) {
+    const studentRef = db.collection("students");
+    const studentQuery = await studentRef.where("email", "==", email).get();
+    
+    if (studentQuery.empty) {
       return null;
     }
-    return doc.data();
+    
+    return studentQuery.docs[0].data();
   } catch (error) {
+    console.error("Error getting student by email:", error);
     throw error;
   }
 };
-exports.editStudentByPhone = async ({ phoneNumber, updateData }) => {
+exports.editStudentByEmail = async ({ email, updateData }) => {
   try {
-    const studentRef = studentsCollection.doc(phoneNumber);
-    const studentDoc = await studentRef.get();
-    if (!studentDoc.exists) {
+    const studentRef = db.collection("students");
+    const studentQuery = await studentRef.where("email", "==", email).get();
+
+    if (studentQuery.empty) {
       throw new Error("Student not found");
     }
-    await studentRef.update(updateData);
-    const updatedStudent = await studentRef.get();
-    return updatedStudent.data();
+
+    const studentDoc = studentQuery.docs[0];
+    const currentStudentData = studentDoc.data();
+
+    if (updateData.email && updateData.email !== email) {
+      const newEmailQuery = await studentRef
+        .where("email", "==", updateData.email)
+        .get();
+      if (!newEmailQuery.empty) {
+        throw new Error("Email already exists");
+      }
+    }
+
+    const updatedData = {
+      ...currentStudentData,
+      ...updateData,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await studentRef.doc(studentDoc.id).update(updatedData);
+    return updatedData;
   } catch (error) {
     console.error("Error editing student", error);
-    throw error;
-  }
-};
-exports.deleteStudentByPhone = async ({ phoneNumber }) => {
-  try {
-    const studentRef = studentsCollection.doc(phoneNumber);
-    const studentDoc = await studentRef.get();
-    if (!studentDoc.exists) {
-      throw new Error("Student not found");
-    }
-    await studentRef.delete();
-  } catch (error) {
-    console.error("Error deleting student", error);
     throw error;
   }
 };
@@ -209,6 +221,22 @@ exports.editStudentProfile = async ({ currentEmail, updateData }) => {
     await studentRef.doc(currentStudentDoc.id).update(updatedData);
     return updatedData;
   } catch (error) {
+    throw error;
+  }
+};
+exports.deleteStudentByEmail = async ({ email }) => {
+  try {
+    const studentRef = db.collection("students");
+    const studentQuery = await studentRef.where("email", "==", email).get();
+    
+    if (studentQuery.empty) {
+      throw new Error("Student not found");
+    }
+
+    const studentDoc = studentQuery.docs[0];
+    await studentRef.doc(studentDoc.id).delete();
+  } catch (error) {
+    console.error("Error deleting student", error);
     throw error;
   }
 };
