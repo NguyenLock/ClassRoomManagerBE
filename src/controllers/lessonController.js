@@ -1,4 +1,5 @@
 const lessonModel = require("../models/lessonModel");
+const { v4: uuidv4 } = require("uuid");
 
 exports.getMyLessons = async (req, res) => {
   try {
@@ -123,6 +124,81 @@ exports.markLessonDone = async (req, res) => {
       success: false,
       error: "Internal Server Error",
       details: error.message,
+    });
+  }
+};
+
+exports.createLesson = async (req, res) => {
+  try {
+    const { title, description } = req.body;
+
+    if (!title || !description) {
+      return res.status(400).json({
+        success: false,
+        error: "Title and description are required",
+      });
+    }
+
+    const lessonId = uuidv4();
+
+    const lesson = await lessonModel.createLesson({
+      title,
+      description,
+      lessonId,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Lesson created successfully",
+      lesson,
+    });
+  } catch (error) {
+    console.error("Error in createLesson:", error);
+
+    if (error.message === "Lesson ID already exists") {
+      return res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: "Internal Server Error",
+    });
+  }
+};
+
+exports.getLessonById = async (req, res) => {
+  try {
+    const { lessonId } = req.params;
+
+    if (!lessonId) {
+      return res.status(400).json({
+        success: false,
+        error: "Lesson ID is required",
+      });
+    }
+
+    const lesson = await lessonModel.getLessonById(lessonId);
+
+    return res.status(200).json({
+      success: true,
+      lesson,
+    });
+  } catch (error) {
+    console.error("Error in getLessonById:", error);
+
+    if (error.message === "Lesson not found") {
+      return res.status(404).json({
+        success: false,
+        error: "Lesson not found",
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: "Internal Server Error",
     });
   }
 };

@@ -4,9 +4,9 @@ const { sendVerificationEmail } = require("../config/email");
 const { hashPassword } = require("../utils/passwordHash");
 
 exports.addStudent = async (req, res) => {
-  try{
-    const {email} = req.body;
-    if(!email){
+  try {
+    const { email } = req.body;
+    if (!email) {
       return res.status(400).json({
         error: "Email is required",
       });
@@ -16,33 +16,32 @@ exports.addStudent = async (req, res) => {
     const studentInfo = await studentModel.addStudent({
       email,
       verificationToken,
-    })
-    try{
+    });
+    try {
       await sendVerificationEmail({
         email,
         verificationToken,
         verificationLink: `${process.env.FRONTEND_URL}/setup-account/${verificationToken}`,
       });
-    } catch(error){
+    } catch (error) {
       console.error("Error sending verification email", error);
-      await studentModel.deleteStudentByToken({verificationToken});
+      await studentModel.deleteStudentByToken({ verificationToken });
       return res.status(500).json({
         error: "Failed to send verification email",
       });
     }
     res.status(201).json({
       message: "Verification email sent successfully",
-
     });
-  }catch(error){
-    if(error.message === "Email already exists"){
+  } catch (error) {
+    if (error.message === "Email already exists") {
       return res.status(400).json({
         error: error.message,
       });
     }
     res.status(500).json({
       error: "Internal Server Error",
-    })
+    });
   }
 };
 
@@ -50,8 +49,6 @@ exports.setupAccount = async (req, res) => {
   try {
     const { verificationToken } = req.params;
     const { name, phoneNumber, password } = req.body;
-
-    
 
     if (!name || !phoneNumber || !password) {
       return res.status(400).json({
@@ -66,8 +63,9 @@ exports.setupAccount = async (req, res) => {
       formattedPhoneNumber = "0" + formattedPhoneNumber;
     }
 
-    const student = await studentModel.findByVerificationToken({ verificationToken });
-    
+    const student = await studentModel.findByVerificationToken({
+      verificationToken,
+    });
 
     if (!student) {
       return res.status(404).json({
@@ -92,9 +90,8 @@ exports.setupAccount = async (req, res) => {
 
     res.status(200).json({
       message: "Account setup successfully",
-      success: true
+      success: true,
     });
-
   } catch (error) {
     console.error("Setup account error:", error);
 
@@ -105,7 +102,7 @@ exports.setupAccount = async (req, res) => {
     }
     res.status(500).json({
       error: "Internal Server Error",
-      details: error.message
+      details: error.message,
     });
   }
 };
@@ -118,24 +115,63 @@ exports.assignLesson = async (req, res) => {
         error: "Missing required fields",
       });
     }
+
     const lessonId = uuidv4();
-    const lessons = await studentModel.assignLesson({
-      studentPhone,
-      title,
-      description,
-      lessonId,
-    });
-    res.status(201).json({
-      message: "Lesson assigned successfully",
-      success: true,
-      lessons,
-    });
-  } catch (error) {
-    if (error.message === "Student not found") {
-      return res.status(404).json({
-        error: error.message,
+    const results = {
+      success: [],
+      failed: [],
+    };
+
+    const phoneNumbers = Array.isArray(studentPhone)
+      ? studentPhone
+      : [studentPhone];
+
+    for (const phone of phoneNumbers) {
+      try {
+        const lessons = await studentModel.assignLesson({
+          studentPhone: phone,
+          title,
+          description,
+          lessonId,
+        });
+        results.success.push({
+          studentPhone: phone,
+          message: "Lesson assigned successfully",
+          lessons,
+        });
+      } catch (error) {
+        results.failed.push({
+          studentPhone: phone,
+          error: error.message,
+        });
+      }
+    }
+
+    if (!Array.isArray(studentPhone)) {
+      if (results.failed.length > 0) {
+        const error = results.failed[0];
+        if (error.error === "Student not found") {
+          return res.status(404).json({
+            error: error.error,
+          });
+        }
+        return res.status(500).json({
+          error: "Internal Server Error",
+        });
+      }
+      return res.status(201).json({
+        message: "Lesson assigned successfully",
+        success: true,
+        lessons: results.success[0].lessons,
       });
     }
+
+    return res.status(200).json({
+      success: true,
+      message: "Lesson assignment completed",
+      results,
+    });
+  } catch (error) {
     console.error("Error assigning lesson", error);
     res.status(500).json({
       error: "Internal Server Error",
@@ -166,9 +202,9 @@ exports.getStudentByEmail = async (req, res) => {
         error: "Student not found",
       });
     }
-    res.status(200).json({ 
+    res.status(200).json({
       success: true,
-      student 
+      student,
     });
   } catch (error) {
     res.status(500).json({
