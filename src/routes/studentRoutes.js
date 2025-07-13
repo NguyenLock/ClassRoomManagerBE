@@ -10,7 +10,7 @@ router.use(authMiddleware, roleMiddleware("instructor"));
 
 router.post(
   "/addStudent",
-  validateMiddleware(["name", "phoneNumber", "email"]),
+  validateMiddleware(["email"]),
   studentController.addStudent
 );
 router.post(

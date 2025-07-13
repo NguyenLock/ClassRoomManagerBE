@@ -1,28 +1,46 @@
 const studentModel = require("../models/studentModel");
 const { v4: uuidv4 } = require("uuid");
-
+const { sendVerificationEmail } = require("../config/email");
 exports.addStudent = async (req, res) => {
-  try {
-    const { name, phoneNumber, email } = req.body;
-    if (!name || !phoneNumber || !email) {
+  try{
+    const {email} = req.body;
+    if(!email){
       return res.status(400).json({
-        error: "Missing required fields",
+        error: "Email is required",
       });
     }
+    const verificationToken = uuidv4();
+
     const studentInfo = await studentModel.addStudent({
-      name,
-      phoneNumber,
       email,
-    });
+      verificationToken,
+    })
+    try{
+      await sendVerificationEmail({
+        email,
+        verificationToken,
+        verificationLink: `${process.env.FRONTEND_URL}/setup-account/${verificationToken}`,
+      });
+    } catch(error){
+      console.error("Error sending verification email", error);
+      await studentModel.deleteStudentByToken({verificationToken});
+      return res.status(500).json({
+        error: "Failed to send verification email",
+      });
+    }
     res.status(201).json({
-      message: "Student added successfully",
-      success: true,
+      message: "Verification email sent successfully",
+
     });
-  } catch (error) {
-    console.error("Error adding student", error);
+  }catch(error){
+    if(error.message === "Email already exists"){
+      return res.status(400).json({
+        error: error.message,
+      });
+    }
     res.status(500).json({
       error: "Internal Server Error",
-    });
+    })
   }
 };
 exports.assignLesson = async (req, res) => {
