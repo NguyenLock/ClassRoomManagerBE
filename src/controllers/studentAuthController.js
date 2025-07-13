@@ -1,12 +1,13 @@
 const db = require("../config/firebase");
-const transporter = require("../config/email");
+const { accessCodeTransporter } = require("../config/email");
 const generate6Code = require("../utils/generateCode");
 const jwt = require("jsonwebtoken");
 const studentModel = require('../models/studentModel');
+const bcrypt = require('bcrypt');
 
 exports.loginEmail = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, password } = req.body;
 
     const studentsRef = db.collection("students");
     const studentQuery = await studentsRef.where("email", "==", email).get();
@@ -17,7 +18,22 @@ exports.loginEmail = async (req, res) => {
       });
     }
     const studentData = studentQuery.docs[0].data();
+    if(!studentData.accountSetup|| !studentData.isVerified){ 
+      return res.status(401).json({
+        success: false,
+        error: "Account not verified Please contact instructor to active account"
+      });
+    }
+    const isPasswordCorrect = await bcrypt.compare(password, studentData.password);
+    if(!isPasswordCorrect){
+      return res.status(401).json({
+        success: false,
+        error: "Invalid password"
+      });
+    }
+
     const accessCode = generate6Code();
+
 
     await db.collection("accessCodes").doc(email).set({
       code: accessCode,
@@ -30,7 +46,7 @@ exports.loginEmail = async (req, res) => {
       subject: "Your Access Code for Student Login",
       text: `Your access Code is: ${accessCode}`,
     };
-    await transporter.sendMail(mailOptions);
+    await accessCodeTransporter.sendMail(mailOptions);
 
     return res.status(200).json({
       message: "Access code sent to email",

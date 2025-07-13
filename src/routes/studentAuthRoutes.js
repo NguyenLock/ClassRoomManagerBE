@@ -12,7 +12,7 @@ router.post(
 );
 router.post(
   "/login-email",
-  validateMiddleware(["email"]),
+  validateMiddleware(["email", "password"]),
   studentAuthController.loginEmail
 );
 router.post(

@@ -8,6 +8,17 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+const accessCodeTransporter = nodemailer.createTransport({
+  service: "gmail",
+  host: process.env.SMTP_HOST,
+  port: process.env.SMTP_PORT,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_APP_PASSWORD,
+  },
+});
+
 const sendVerificationEmail = async ({ email, verificationToken }) => {
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -41,5 +52,6 @@ const sendVerificationEmail = async ({ email, verificationToken }) => {
 
 module.exports = {
   transporter,
+  accessCodeTransporter,
   sendVerificationEmail,
 };
