@@ -51,7 +51,7 @@ exports.setupAccount = async (req, res) => {
     const { verificationToken } = req.params;
     const { name, phoneNumber, password } = req.body;
 
-    console.log("Setup account request:", { verificationToken, name, phoneNumber });
+    
 
     if (!name || !phoneNumber || !password) {
       return res.status(400).json({
@@ -59,8 +59,15 @@ exports.setupAccount = async (req, res) => {
       });
     }
 
+    let formattedPhoneNumber = phoneNumber.replace(/\s+/g, "");
+    if (formattedPhoneNumber.startsWith("+84")) {
+      formattedPhoneNumber = "0" + formattedPhoneNumber.substring(3);
+    } else if (!formattedPhoneNumber.startsWith("0")) {
+      formattedPhoneNumber = "0" + formattedPhoneNumber;
+    }
+
     const student = await studentModel.findByVerificationToken({ verificationToken });
-    console.log("Found student:", student);
+    
 
     if (!student) {
       return res.status(404).json({
@@ -79,7 +86,7 @@ exports.setupAccount = async (req, res) => {
     const updatedStudent = await studentModel.setupAccount({
       verificationToken,
       name,
-      phoneNumber,
+      phoneNumber: formattedPhoneNumber,
       password: hashedPassword,
     });
 
