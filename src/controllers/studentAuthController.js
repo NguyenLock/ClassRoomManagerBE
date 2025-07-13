@@ -34,7 +34,6 @@ exports.loginEmail = async (req, res) => {
 
     const accessCode = generate6Code();
 
-
     await db.collection("accessCodes").doc(email).set({
       code: accessCode,
       createdAt: new Date().toISOString(),
@@ -44,8 +43,33 @@ exports.loginEmail = async (req, res) => {
       from: process.env.EMAIL_USER,
       to: email,
       subject: "Your Access Code for Student Login",
-      text: `Your access Code is: ${accessCode}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background-color: #2563eb; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0;">ClassRoom App Login</h1>
+          </div>
+          <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 10px 10px;">
+            <p style="font-size: 16px; color: #374151; margin-bottom: 20px;">
+              Here is your access code for login:
+            </p>
+            <div style="text-align: center; margin: 30px 0;">
+              <div style="background-color: #f3f4f6; padding: 20px; border-radius: 5px; font-size: 32px; letter-spacing: 5px; font-weight: bold; color: #2563eb;">
+                ${accessCode}
+              </div>
+            </div>
+            <p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
+              This code will expire in 5 minutes. Do not share this code with anyone.
+            </p>
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280;">
+              <p style="font-size: 12px; margin: 0;">
+                © ${new Date().getFullYear()} ClassRoom App. All rights reserved.
+              </p>
+            </div>
+          </div>
+        </div>
+      `,
     };
+
     await accessCodeTransporter.sendMail(mailOptions);
 
     return res.status(200).json({
