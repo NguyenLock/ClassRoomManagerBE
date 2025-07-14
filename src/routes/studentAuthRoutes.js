@@ -4,6 +4,7 @@ const studentAuthController = require("../controllers/studentAuthController");
 const studentController = require("../controllers/studentController");
 const validateMiddleware = require("../middlewares/validateMiddleware");
 const authMiddleware = require("../middlewares/authMiddleware");
+const authController = require("../controllers/authController");
 
 router.post(
   "/setup-account/:verificationToken",
@@ -26,5 +27,7 @@ router.put(
   validateMiddleware(["name", "email", "phoneNumber"]),
   studentAuthController.editProfile
 );
+
+router.get("/instructors", authMiddleware, authController.getAllInstructors);
 
 module.exports = router;

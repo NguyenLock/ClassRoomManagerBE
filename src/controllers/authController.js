@@ -176,3 +176,38 @@ exports.getCurrentUser = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+exports.getAllInstructors = async (req, res) => {
+    try {
+        if (req.user.userType !== 'student') {
+            return res.status(403).json({ 
+                success: false,
+                error: 'Access denied. Student only.' 
+            });
+        }
+
+        const usersRef = db.collection('users');
+        const instructorsQuery = await usersRef.where('userType', '==', 'instructor').get();
+
+        const instructors = [];
+        instructorsQuery.forEach(doc => {
+            const data = doc.data();
+            instructors.push({
+                phoneNumber: data.phoneNumber,
+                name: data.name,
+                email: data.email
+            });
+        });
+
+        res.json({
+            success: true,
+            total: instructors.length,
+            data: instructors
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            success: false,
+            error: 'Internal server error' 
+        });
+    }
+};
