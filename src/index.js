@@ -22,7 +22,7 @@ app.use('/student-auth', studentAuthRoutes);
 app.use('/lessons', lessonRoutes);
 app.use('/chat', chatRoutes);
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 8080;
 
 const server = http.createServer(app);
 const io = initializeSocket(server);

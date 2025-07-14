@@ -88,7 +88,6 @@ exports.createLesson = async ({ title, description, lessonId }) => {
     await lessonsRef.doc(lessonId).set(lessonData);
     return lessonData;
   } catch (error) {
-    console.error("Error creating lesson:", error);
     throw error;
   }
 };
@@ -103,7 +102,6 @@ exports.getLessonById = async (lessonId) => {
 
     return lessonDoc.data();
   } catch (error) {
-    console.error("Error getting lesson:", error);
     throw error;
   }
 };
@@ -157,7 +155,6 @@ exports.getAllLessons = async () => {
       (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
     );
   } catch (error) {
-    console.error("Error getting all lessons:", error);
     throw error;
   }
 };

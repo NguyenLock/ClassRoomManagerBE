@@ -37,7 +37,6 @@ exports.deleteStudentByToken = async ({ verificationToken }) => {
     }
     await studentRef.delete();
   } catch (error) {
-    console.error("Error deleting student", error);
     throw error;
   }
 };
@@ -87,7 +86,6 @@ exports.setupAccount = async ({
       accountSetup: true,
     };
   } catch (error) {
-    console.error("Error in setupAccount:", error);
     throw error;
   }
 };
@@ -135,7 +133,6 @@ exports.assignLesson = async ({ studentPhone, lessonId }) => {
     await studentsRef.doc(studentDoc.id).update({ lessons });
     return lessons;
   } catch (error) {
-    console.error("Error assigning lesson", error);
     throw error;
   }
 };
@@ -153,7 +150,6 @@ exports.getAllStudents = async () => {
       };
     });
   } catch (error) {
-    console.error("Error getting all students", error);
     throw error;
   }
 };
@@ -168,7 +164,6 @@ exports.getStudentByEmail = async ({ email }) => {
 
     return studentQuery.docs[0].data();
   } catch (error) {
-    console.error("Error getting student by email:", error);
     throw error;
   }
 };
@@ -202,7 +197,6 @@ exports.editStudentByEmail = async ({ email, updateData }) => {
     await studentRef.doc(studentDoc.id).update(updatedData);
     return updatedData;
   } catch (error) {
-    console.error("Error editing student", error);
     throw error;
   }
 };
@@ -252,7 +246,6 @@ exports.deleteStudentByEmail = async ({ email }) => {
     const studentDoc = studentQuery.docs[0];
     await studentRef.doc(studentDoc.id).delete();
   } catch (error) {
-    console.error("Error deleting student", error);
     throw error;
   }
 };

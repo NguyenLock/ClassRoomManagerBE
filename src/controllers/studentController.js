@@ -24,7 +24,6 @@ exports.addStudent = async (req, res) => {
         verificationLink: `${process.env.FRONTEND_URL}/setup-account/${verificationToken}`,
       });
     } catch (error) {
-      console.error("Error sending verification email", error);
       await studentModel.deleteStudentByToken({ verificationToken });
       return res.status(500).json({
         error: "Failed to send verification email",
@@ -93,8 +92,6 @@ exports.setupAccount = async (req, res) => {
       success: true,
     });
   } catch (error) {
-    console.error("Setup account error:", error);
-
     if (error.message === "Account already setup") {
       return res.status(400).json({
         error: error.message,
@@ -179,7 +176,6 @@ exports.assignLesson = async (req, res) => {
       results,
     });
   } catch (error) {
-    console.error("Error assigning lesson", error);
     res.status(500).json({
       error: "Internal Server Error",
     });

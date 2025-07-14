@@ -151,7 +151,7 @@
       function initializeSocket(token, userType) {
         currentUserType = userType;
 
-        socket = io("http://localhost:3000", {
+        socket = io("http://localhost:8080", {
           auth: {
             token,
             userType,
@@ -163,7 +163,6 @@
         });
 
         socket.on("error", (error) => {
-          console.error("Socket error:", error);
           document.getElementById("loginError").textContent = error.message;
 
           document.getElementById("chatContainer").style.display = "none";
@@ -211,7 +210,6 @@
           );
           return JSON.parse(jsonPayload);
         } catch (e) {
-          console.error("Error parsing token:", e);
           return {};
         }
       }

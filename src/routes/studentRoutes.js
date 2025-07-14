@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const studentController = require("../controllers/studentController");
 const lessonController = require("../controllers/lessonController");
+const authController = require("../controllers/authController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const roleMiddleware = require("../middlewares/roleMiddleware");
 const validateMiddleware = require("../middlewares/validateMiddleware");
@@ -35,6 +36,12 @@ router.put("/editStudentByEmail/:email", studentController.editStudentByEmail);
 router.delete(
   "/deleteStudentByEmail/:email",
   studentController.deleteStudentByEmail
+);
+
+router.put(
+  "/profile",
+  validateMiddleware(["name", "email"]),
+  authController.editInstructorProfile
 );
 
 module.exports = router;

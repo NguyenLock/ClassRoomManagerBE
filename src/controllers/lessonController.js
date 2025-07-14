@@ -39,7 +39,6 @@ exports.getMyLessons = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error in getMyLessons:", error);
     if (error.message === "Student not found") {
       return res.status(404).json({
         error: error.message,
@@ -58,13 +57,13 @@ exports.markLessonDone = async (req, res) => {
         error: "LessonId is required",
       });
     }
-
+    
     if (req.user.userType !== "student") {
       return res.status(403).json({
         error: "Access denied. Student only.",
       });
     }
-
+  
     const studentData = await lessonModel.CheckStudentByEmail(req.user.email);
 
     const studentLessons = studentData.lessons || [];
@@ -72,7 +71,7 @@ exports.markLessonDone = async (req, res) => {
     const lessonToMark = studentLessons.find(
       (lesson) => lesson.lessonId === lessonId
     );
-
+    
     if (!lessonToMark) {
       return res.status(403).json({
         success: false,
@@ -86,7 +85,7 @@ exports.markLessonDone = async (req, res) => {
         error: "This lesson is already completed",
       });
     }
-
+    
     const updatedLessons = await lessonModel.markLessonAsCompleted(
       studentData.phoneNumber,
       lessonId
@@ -100,12 +99,6 @@ exports.markLessonDone = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Detailed error in markLessonDone:", {
-      message: error.message,
-      stack: error.stack,
-      error,
-    });
-
     if (error.message === "Student not found") {
       return res.status(404).json({
         success: false,
@@ -153,8 +146,6 @@ exports.createLesson = async (req, res) => {
       lesson,
     });
   } catch (error) {
-    console.error("Error in createLesson:", error);
-
     if (error.message === "Lesson ID already exists") {
       return res.status(400).json({
         success: false,
@@ -187,8 +178,6 @@ exports.getLessonById = async (req, res) => {
       lesson,
     });
   } catch (error) {
-    console.error("Error in getLessonById:", error);
-
     if (error.message === "Lesson not found") {
       return res.status(404).json({
         success: false,
@@ -214,7 +203,6 @@ exports.getAllLessons = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Error in getAllLessons:", error);
     return res.status(500).json({
       success: false,
       error: "Internal Server Error",

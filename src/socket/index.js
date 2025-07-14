@@ -1,6 +1,7 @@
 const socketIO = require('socket.io');
 const jwt = require('jsonwebtoken');
 const db = require('../config/firebase');
+const chatModel = require('../models/chatModel');
 
 function initializeSocket(server) {
     const io = socketIO(server, {
@@ -98,25 +99,27 @@ function initializeSocket(server) {
                     
                     console.log('Found instructors:', instructorsRef.size);
                     
+                    const messageData = {
+                        studentEmail: sender.email,
+                        fromName: sender.name,
+                        message,
+                        senderType: 'student'
+                    };
+
+                    
+                    await chatModel.saveMessage(messageData);
                     
                     instructorsRef.forEach(doc => {
                         io.to('instructor-room').emit('new-message', {
-                            from: sender.email,
-                            fromName: sender.name,
-                            message,
-                            timestamp: new Date(),
-                            senderType: 'student'
+                            ...messageData,
+                            timestamp: new Date()
                         });
                         console.log('Message sent to instructor room');
                     });
 
-                    
                     socket.emit('new-message', {
-                        from: sender.email,
-                        fromName: sender.name,
-                        message,
-                        timestamp: new Date(),
-                        senderType: 'student'
+                        ...messageData,
+                        timestamp: new Date()
                     });
                     console.log('Message sent back to student');
 
@@ -132,22 +135,24 @@ function initializeSocket(server) {
                     }
                     console.log('Student found, sending message');
 
+                    const messageData = {
+                        studentEmail: recipientEmail,
+                        instructorPhone: sender.phoneNumber,
+                        message,
+                        senderType: 'instructor'
+                    };
+
+                    await chatModel.saveMessage(messageData);
                     
                     io.to(`student-${recipientEmail}`).emit('new-message', {
-                        from: sender.phoneNumber,
-                        message,
-                        timestamp: new Date(),
-                        senderType: 'instructor'
+                        ...messageData,
+                        timestamp: new Date()
                     });
                     console.log('Message sent to student room');
 
-                    
                     socket.emit('new-message', {
-                        from: sender.phoneNumber,
-                        to: recipientEmail,
-                        message,
-                        timestamp: new Date(),
-                        senderType: 'instructor'
+                        ...messageData,
+                        timestamp: new Date()
                     });
                     console.log('Message sent back to instructor');
                 }
