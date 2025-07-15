@@ -97,7 +97,7 @@ A comprehensive Node.js backend application for managing classroom activities, s
    SMTP_PORT=587
 
    # Frontend URL
-   FRONTEND_URL=http://localhost:3000
+   FRONTEND_URL=http://localhost:5173
    ```
 
 4. **Firebase Setup**
