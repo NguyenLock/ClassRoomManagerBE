@@ -28,3 +28,71 @@ exports.getAssignmentsByLesson = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+
+exports.getAssignmentById = async (req, res) => {
+  try {
+    const { assignmentId } = req.params;
+    const assignment = await assignmentModel.getAssignmentById(assignmentId);
+    res.status(200).json({ success: true, assignment });
+  } catch (error) {
+    if (error.message === "Assignment not found") {
+      return res.status(404).json({ error: "Assignment not found" });
+    }
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+exports.updateAssignment = async (req, res) => {
+  try {
+    const { assignmentId } = req.params;
+    const { title, description, deadline, maxScore } = req.body;
+    
+    
+    if (!title && !description && !deadline && !maxScore) {
+      return res.status(400).json({ 
+        error: "At least one field (title, description, deadline, maxScore) is required to update" 
+      });
+    }
+
+    const updateData = {};
+    if (title) updateData.title = title;
+    if (description) updateData.description = description;
+    if (deadline) updateData.deadline = deadline;
+    if (maxScore) updateData.maxScore = maxScore;
+    
+    const updatedAssignment = await assignmentModel.updateAssignment(assignmentId, updateData);
+    
+    res.status(200).json({ 
+      success: true, 
+      message: "Assignment updated successfully",
+      assignment: updatedAssignment 
+    });
+  } catch (error) {
+    if (error.message === "Assignment not found") {
+      return res.status(404).json({ error: "Assignment not found" });
+    }
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+exports.deleteAssignment = async (req, res) => {
+  try {
+    const { assignmentId } = req.params;
+    
+    const deletedAssignment = await assignmentModel.deleteAssignment(assignmentId);
+    
+    res.status(200).json({ 
+      success: true, 
+      message: "Assignment deleted successfully",
+      deletedAssignment 
+    });
+  } catch (error) {
+    if (error.message === "Assignment not found") {
+      return res.status(404).json({ error: "Assignment not found" });
+    }
+    res.status(500).json({ error: error.message });
+  }
+};

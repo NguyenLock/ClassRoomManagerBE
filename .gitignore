@@ -81,4 +81,9 @@ firebase-debug.*.log*
 
 # Build / Generate output
 dist
-build 
+build
+
+# TODO and documentation files
+ASSIGNMENT_TODO_LIST.md
+TODO*.md
+*TODO*.md 
