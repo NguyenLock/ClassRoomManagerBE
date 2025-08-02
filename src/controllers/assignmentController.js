@@ -22,13 +22,34 @@ exports.createAssignment = async (req, res) => {
 exports.getAssignmentsByLesson = async (req, res) => {
   try {
     const { lessonId } = req.params;
-    const assignments = await assignmentModel.getAssignmentsByLesson(lessonId);
-    res.status(200).json({ success: true, assignments });
+    const {
+      page = 1,
+      pageSize = 10,
+    } = req.query;
+    const pageNum = parseInt(page);
+    const pageSizeNum = parseInt(pageSize);
+
+    if (pageNum < 1 || pageSize < 1 || pageSizeNum > 100) {
+      return res.status(400).json({
+        error: error.message,
+      });
+    }
+    const options = {
+      page: pageNum,
+      pageSize: pageSizeNum,
+    };
+    const result = await assignmentModel.getAssignmentsByLesson(
+      lessonId,
+      options
+    );
+    res.status(200).json({
+      success: true,
+      ...result,
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
-
 
 exports.getAssignmentById = async (req, res) => {
   try {
@@ -43,16 +64,15 @@ exports.getAssignmentById = async (req, res) => {
   }
 };
 
-
 exports.updateAssignment = async (req, res) => {
   try {
     const { assignmentId } = req.params;
     const { title, description, deadline, maxScore } = req.body;
-    
-    
+
     if (!title && !description && !deadline && !maxScore) {
-      return res.status(400).json({ 
-        error: "At least one field (title, description, deadline, maxScore) is required to update" 
+      return res.status(400).json({
+        error:
+          "At least one field (title, description, deadline, maxScore) is required to update",
       });
     }
 
@@ -61,13 +81,16 @@ exports.updateAssignment = async (req, res) => {
     if (description) updateData.description = description;
     if (deadline) updateData.deadline = deadline;
     if (maxScore) updateData.maxScore = maxScore;
-    
-    const updatedAssignment = await assignmentModel.updateAssignment(assignmentId, updateData);
-    
-    res.status(200).json({ 
-      success: true, 
+
+    const updatedAssignment = await assignmentModel.updateAssignment(
+      assignmentId,
+      updateData
+    );
+
+    res.status(200).json({
+      success: true,
       message: "Assignment updated successfully",
-      assignment: updatedAssignment 
+      assignment: updatedAssignment,
     });
   } catch (error) {
     if (error.message === "Assignment not found") {
@@ -77,17 +100,18 @@ exports.updateAssignment = async (req, res) => {
   }
 };
 
-
 exports.deleteAssignment = async (req, res) => {
   try {
     const { assignmentId } = req.params;
-    
-    const deletedAssignment = await assignmentModel.deleteAssignment(assignmentId);
-    
-    res.status(200).json({ 
-      success: true, 
+
+    const deletedAssignment = await assignmentModel.deleteAssignment(
+      assignmentId
+    );
+
+    res.status(200).json({
+      success: true,
       message: "Assignment deleted successfully",
-      deletedAssignment 
+      deletedAssignment,
     });
   } catch (error) {
     if (error.message === "Assignment not found") {
