@@ -11,6 +11,7 @@ const studentAuthRoutes = require('./routes/studentAuthRoutes');
 const lessonRoutes = require('./routes/lessonRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const assignmentRoutes = require('./routes/assignmentRoutes');
+const submissionRoutes = require('./routes/submissionRoutes');
 const app = express();
 
 app.use(cors());
@@ -23,6 +24,7 @@ app.use('/student-auth', studentAuthRoutes);
 app.use('/lessons', lessonRoutes);
 app.use('/chat', chatRoutes);
 app.use('/assignments', assignmentRoutes);
+app.use('/submissions', submissionRoutes);
 const port = process.env.PORT || 8080;
 
 const server = http.createServer(app);
