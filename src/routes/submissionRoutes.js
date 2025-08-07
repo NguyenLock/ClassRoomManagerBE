@@ -22,6 +22,11 @@ router.get('/student',
   roleMiddleware("student"),
   submissionController.getStudentSubmission
 );
+router.delete("/:submissionId",
+  authMiddleware,
+  roleMiddleware("student"),
+  submissionController.deleteSubmission
+);
 //Instructor for getting submissions by assignment
 router.get("/assignment/:assignmentId", 
   authMiddleware,

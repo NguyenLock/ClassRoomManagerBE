@@ -105,5 +105,35 @@ exports.getSubmissionsByStudent = async (studentId, options = {}) => {
       hasPrev: page > 1,
     }
   };
-}
+};
+
+exports.getSubmissionById = async (submissionId) => {
+  const submissionRef = db.collection("submissions").doc(submissionId);
+  const doc = await submissionRef.get();
+  
+  if (!doc.exists) {
+    return null;
+  }
+  
+  return { id: doc.id, ...doc.data() };
+};
+
+exports.deleteSubmission = async (submissionId) => {
+  const submissionRef = db.collection("submissions").doc(submissionId);
+  const doc = await submissionRef.get();
+  
+  if (!doc.exists) {
+    throw new Error("Submission not found");
+  }
+  
+  const submissionData = doc.data();
+  
+  // Check if submission has been graded
+  if (submissionData.status === "graded" || submissionData.score !== null) {
+    throw new Error("Cannot delete graded submission");
+  }
+  
+  await submissionRef.delete();
+  return { id: submissionId, ...submissionData };
+};
 

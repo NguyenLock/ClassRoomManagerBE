@@ -170,3 +170,39 @@ exports.gradeSubmission = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.deleteSubmission = async (req, res) => {
+  try {
+    const { submissionId } = req.params;
+    const userId = req.user.email || req.user.phoneNumber;
+    const userRole = req.user.role;
+
+    // Get submission to check ownership for students
+    const submission = await submissionModel.getSubmissionById(submissionId);
+    if (!submission) {
+      return res.status(404).json({ error: "Submission not found." });
+    }
+
+    // Students can only delete their own submissions
+    if (userRole === "student" && submission.studentId !== userId) {
+      return res.status(403).json({ error: "You can only delete your own submissions." });
+    }
+
+    const deletedSubmission = await submissionModel.deleteSubmission(submissionId);
+    
+    return res.status(200).json({
+      success: true,
+      message: "Submission deleted successfully.",
+      submission: deletedSubmission,
+    });
+  } catch (error) {
+    if (error.message === "Cannot delete graded submission") {
+      return res.status(400).json({ error: "Cannot delete submission that has already been graded." });
+    }
+    if (error.message === "Submission not found") {
+      return res.status(404).json({ error: "Submission not found." });
+    }
+    console.error("Error deleting submission:", error);
+    return res.status(500).json({ error: "An error occurred while deleting the submission." });
+  }
+};
