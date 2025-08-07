@@ -79,4 +79,31 @@ exports.getSubmissionsByAssignment = async (assignmentId, options = {}) => {
         }
     };
 };
+exports.getSubmissionsByStudent = async (studentId, options = {}) => {
+  const { page = 1, limit = 10 } = options;
+  let query = db.collection("submissions").where("studentId", "==", studentId);
+
+  const totalSnapshot = await query.get();
+  const total = totalSnapshot.size;
+  const offset = (page - 1) * limit;
+  const paginatedQuery = query.offset(offset).limit(limit);
+
+  const paginatedSnapshot = await paginatedQuery.get();
+  const submissions = paginatedSnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  }));
+
+  return {
+    submissions,
+    pagination: {
+      currentPage: page,
+      pageSize: limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      hasNext: page < Math.ceil(total / limit),
+      hasPrev: page > 1,
+    }
+  };
+}
 

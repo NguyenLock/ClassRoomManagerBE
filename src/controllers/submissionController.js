@@ -70,6 +70,9 @@ exports.submitAssignment = async (req, res) => {
 exports.getStudentSubmission = async (req, res) => {
   try {
     const studentId = req.user.email || req.user.phoneNumber;
+    const { page = 1, limit = 10 } = req.query;
+    const pageNum = parseInt(page);
+    const pageSizeNum = parseInt(limit);
     const { assignmentId } = req.params;
     if (assignmentId) {
       const submission =
@@ -82,7 +85,26 @@ exports.getStudentSubmission = async (req, res) => {
       }
       return res.status(200).json({ success: true, submission });
     }
-    res.status(200).json({ success: true, submissions: [] });
+
+    if (pageNum < 1 || pageSizeNum < 1 || pageSizeNum > 100) {
+      return res
+        .status(400)
+        .json({ error: "Invalid page or limit parameters." });
+    }
+
+    const options = {
+      page: pageNum,
+      limit: pageSizeNum,
+    };
+
+    const result = await submissionModel.getSubmissionsByStudent(
+      studentId,
+      options
+    );
+    res.status(200).json({
+      success: true,
+      ...result,
+    });
   } catch (error) {
     console.error("Error fetching student submission:", error);
     return res
@@ -94,7 +116,6 @@ exports.getSubmissionByAssignment = async (req, res) => {
   try {
     const { assignmentId } = req.params;
     const { page = 1, limit = 10 } = req.query;
-
     const pageNum = parseInt(page);
     const pageSizeNum = parseInt(limit);
 
@@ -103,13 +124,13 @@ exports.getSubmissionByAssignment = async (req, res) => {
         .status(400)
         .json({ error: "Invalid page or limit parameters." });
     }
-    const opdations = {
+    const options = {
       page: pageNum,
       limit: pageSizeNum,
     };
     const result = await submissionModel.getSubmissionsByAssignment(
       assignmentId,
-      opdations
+      options
     );
     res.status(200).json({
       success: true,
@@ -121,31 +142,31 @@ exports.getSubmissionByAssignment = async (req, res) => {
 };
 
 exports.gradeSubmission = async (req, res) => {
-    try{
-        const { submissionId } = req.params;
-        const { score, feedback } = req.body;
-        const instructorId = req.user.email || req.user.phoneNumber;
-        
-        if(score === undefined){
-            return res.status(400).json({ error: "Score is required." });
-        }
-        const updateData = {
-            score,
-            feedback: feedback || "",
-            status: "graded",
-            gradedAt: new Date().toISOString(),
-            gradedBy: instructorId,
-        };
-        const updatedSubmission = await submissionModel.updateSubmission(
-            submissionId,
-            updateData
-        );
-        return res.status(200).json({
-            success: true,
-            message: "Submission graded successfully.",
-            submission: updatedSubmission,
-        });
-    }catch(error){
-        res.status(500).json({ error: error.message });
+  try {
+    const { submissionId } = req.params;
+    const { score, feedback } = req.body;
+    const instructorId = req.user.email || req.user.phoneNumber;
+
+    if (score === undefined) {
+      return res.status(400).json({ error: "Score is required." });
     }
+    const updateData = {
+      score,
+      feedback: feedback || "",
+      status: "graded",
+      gradedAt: new Date().toISOString(),
+      gradedBy: instructorId,
+    };
+    const updatedSubmission = await submissionModel.updateSubmission(
+      submissionId,
+      updateData
+    );
+    return res.status(200).json({
+      success: true,
+      message: "Submission graded successfully.",
+      submission: updatedSubmission,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };

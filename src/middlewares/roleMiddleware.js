@@ -3,18 +3,19 @@ const db = require('../config/firebase');
 module.exports = (requiredRole = 'instructor') =>{
     return async (req, res, next) =>{
         try{
-            const phoneNumber = req.phoneNumber || req.body.phoneNumber;
-            if(!phoneNumber){
+            const userType = req.userType;
+            if(!userType){
                 return res.status(401).json({
-                    error: 'Unauthorized. Missing Phone Number!'
+                    error: 'Unauthorized. Missing User Type!'
                 })
             }
-            const userDoc = await db.collection('users').doc(phoneNumber).get();
-            if(!userDoc.exists){
+            
+            if(userType !== requiredRole){
                 return res.status(403).json({
                     error: 'Forbidden. Insufficient permissions!'
                 })
             }
+            
             next();
         }catch(error){
             res.status(500).json({
