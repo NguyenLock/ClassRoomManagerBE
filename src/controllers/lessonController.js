@@ -5,7 +5,7 @@ const { v4: uuidv4 } = require("uuid");
 
 exports.getMyLessons = async (req, res) => {
   try {
-    let { phoneNumber } = req.query;
+    let { phoneNumber, includeProgress } = req.query;
     if (!phoneNumber) {
       return res.status(400).json({
         error: "Phone number is required",
@@ -34,6 +34,62 @@ exports.getMyLessons = async (req, res) => {
     }
 
     const lessons = await lessonModel.getLessonsByStudentPhone(phoneNumber);
+
+    if (includeProgress === 'true') {
+      for (const lesson of lessons) {
+        try {
+          const assignmentsResult = await assignmentModel.getAssignmentsByLesson(lesson.lessonId, { page: 1, pageSize: 1000 });
+          const assignments = assignmentsResult.assignments || [];
+          
+          let totalAssignments = assignments.length;
+          let completedAssignments = 0;
+          let totalScore = 0;
+          let maxPossibleScore = 0;
+
+          for (const assignment of assignments) {
+            maxPossibleScore += assignment.maxScore || 0;
+            
+            const submission = await submissionModel.getSubmissionByAssignmentAndStudent(
+              assignment.id,
+              studentData.email || studentData.phoneNumber
+            );
+
+            if (submission) {
+              if (submission.score !== null && submission.score !== undefined) {
+                completedAssignments++;
+                totalScore += submission.score;
+              }
+            }
+          }
+
+          const progressPercentage = totalAssignments > 0 ? Math.round((completedAssignments / totalAssignments) * 100) : 0;
+          const scorePercentage = maxPossibleScore > 0 ? Math.round((totalScore / maxPossibleScore) * 100) : 0;
+
+          lesson.progress = {
+            totalAssignments,
+            completedAssignments,
+            progressPercentage,
+            totalScore,
+            maxPossibleScore,
+            scorePercentage,
+            isCompleted: lesson.status === "completed"
+          };
+
+        } catch (error) {
+          console.error(`Error calculating progress for lesson ${lesson.lessonId}:`, error);
+          lesson.progress = {
+            totalAssignments: 0,
+            completedAssignments: 0,
+            progressPercentage: 0,
+            totalScore: 0,
+            maxPossibleScore: 0,
+            scorePercentage: 0,
+            isCompleted: lesson.status === "completed"
+          };
+        }
+      }
+    }
+
     return res.status(200).json({
       success: true,
       data: {
@@ -206,7 +262,7 @@ exports.createLesson = async (req, res) => {
 exports.getLessonById = async (req, res) => {
   try {
     const { lessonId } = req.params;
-
+    const { includeAssignments, includeSubmissions } = req.query;
     if (!lessonId) {
       return res.status(400).json({
         success: false,
@@ -215,6 +271,29 @@ exports.getLessonById = async (req, res) => {
     }
 
     const lesson = await lessonModel.getLessonById(lessonId);
+    if(includeAssignments === "true"){
+      try{
+        const assignmentsResult = await assignmentModel.getAssignmentsByLesson(lessonId, { page: 1, pageSize: 1000 });
+        lesson.assignments = assignmentsResult.assignments || [];
+        if (includeSubmissions === "true") {
+          for (const assignment of lesson.assignments) {
+            try{
+              const submissionResult = await submissionModel.getSubmissionsByAssignment(assignment.id);
+              assignment.submission = submissionResult || null;
+            } catch (error) {
+              console.error(`Error fetching submissions for assignment ${assignment.id}:`, error);
+              assignment.submission = [];
+            }
+          }
+        }
+      }catch (error) {
+        console.error("Error fetching assignments:", error);
+        return res.status(500).json({
+          success: false,
+          error: "Internal Server Error while fetching assignments",
+        });
+      }
+    }
 
     return res.status(200).json({
       success: true,
