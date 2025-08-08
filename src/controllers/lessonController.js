@@ -1,4 +1,6 @@
 const lessonModel = require("../models/lessonModel");
+const assignmentModel = require("../models/assignmentModel");
+const submissionModel = require("../models/submissionModel");
 const { v4: uuidv4 } = require("uuid");
 
 exports.getMyLessons = async (req, res) => {
@@ -85,6 +87,32 @@ exports.markLessonDone = async (req, res) => {
         error: "This lesson is already completed",
       });
     }
+
+    const assignmentsResult = await assignmentModel.getAssignmentsByLesson(lessonId, { page: 1, pageSize: 1000 });
+    const assignments = assignmentsResult.assignments;
+
+    if (assignments.length > 0) {
+      for (const assignment of assignments) {
+        const submission = await submissionModel.getSubmissionByAssignmentAndStudent(
+          assignment.id,
+          studentData.email || studentData.phoneNumber
+        );
+
+        if (!submission) {
+          return res.status(400).json({
+            success: false,
+            error: `Assignment "${assignment.title}". Please submit your assignment before marking the lesson as completed.`,
+          });
+        }
+
+        if (submission.score === null || submission.score === undefined) {
+          return res.status(400).json({
+            success: false,
+            error: `Assignment "${assignment.title}" has not been graded. Please wait for the instructor to grade all assignments before marking the lesson as completed.`,
+          });
+        }
+      }
+    }
     
     const updatedLessons = await lessonModel.markLessonAsCompleted(
       studentData.phoneNumber,
@@ -113,6 +141,21 @@ exports.markLessonDone = async (req, res) => {
       });
     }
 
+    if (error.message === "Assignment not found") {
+      return res.status(404).json({
+        success: false,
+        error: "Assignment not found",
+      });
+    }
+
+    if (error.message === "Submission not found") {
+      return res.status(404).json({
+        success: false,
+        error: "Submission not found",
+      });
+    }
+
+    console.error("Error in markLessonDone:", error);
     return res.status(500).json({
       success: false,
       error: "Internal Server Error",
