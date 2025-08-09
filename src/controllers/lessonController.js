@@ -331,3 +331,120 @@ exports.getAllLessons = async (req, res) => {
     });
   }
 };
+
+exports.getLessonDetailForStudent = async (req, res) => {
+  try {
+    const { lessonId } = req.params;
+    const studentId = req.user.email || req.user.phoneNumber;
+
+    if (!lessonId) {
+      return res.status(400).json({
+        success: false,
+        error: "Lesson ID is required",
+      });
+    }
+
+    const studentData = await lessonModel.CheckStudentByEmail(req.user.email);
+    const studentLessons = studentData.lessons || [];
+    
+    const assignedLesson = studentLessons.find(
+      (lesson) => lesson.lessonId === lessonId
+    );
+
+    if (!assignedLesson) {
+      return res.status(403).json({
+        success: false,
+        error: "You don't have access to this lesson",
+      });
+    }
+
+    const lesson = await lessonModel.getLessonById(lessonId);
+    
+    const assignmentsResult = await assignmentModel.getAssignmentsByLesson(lessonId, { page: 1, pageSize: 1000 });
+    const assignments = assignmentsResult.assignments || [];
+
+    const assignmentsWithSubmissions = await Promise.all(
+      assignments.map(async (assignment) => {
+        try {
+          const submission = await submissionModel.getSubmissionByAssignmentAndStudent(
+            assignment.id,
+            studentId
+          );
+
+          return {
+            ...assignment,
+            submission: submission || null,
+            hasSubmitted: !!submission,
+            isGraded: submission ? (submission.score !== null && submission.score !== undefined) : false,
+            isLate: submission ? submission.status === "late" : false,
+            isPastDeadline: new Date() > new Date(assignment.deadline)
+          };
+        } catch (error) {
+          console.error(`Error fetching submission for assignment ${assignment.id}:`, error);
+          return {
+            ...assignment,
+            submission: null,
+            hasSubmitted: false,
+            isGraded: false,
+            isLate: false,
+            isPastDeadline: new Date() > new Date(assignment.deadline)
+          };
+        }
+      })
+    );
+
+    const totalAssignments = assignments.length;
+    const submittedAssignments = assignmentsWithSubmissions.filter(a => a.hasSubmitted).length;
+    const gradedAssignments = assignmentsWithSubmissions.filter(a => a.isGraded).length;
+    const totalScore = assignmentsWithSubmissions
+      .filter(a => a.isGraded)
+      .reduce((sum, a) => sum + (a.submission?.score || 0), 0);
+    const maxPossibleScore = assignmentsWithSubmissions
+      .filter(a => a.isGraded)
+      .reduce((sum, a) => sum + (a.maxScore || 0), 0);
+
+    const lessonDetail = {
+      ...lesson,
+      ...assignedLesson, 
+      assignments: assignmentsWithSubmissions,
+      progress: {
+        totalAssignments,
+        submittedAssignments,
+        gradedAssignments,
+        pendingGrade: submittedAssignments - gradedAssignments,
+        submissionProgress: totalAssignments > 0 ? Math.round((submittedAssignments / totalAssignments) * 100) : 0,
+        gradingProgress: submittedAssignments > 0 ? Math.round((gradedAssignments / submittedAssignments) * 100) : 0,
+        totalScore,
+        maxPossibleScore,
+        averageScore: gradedAssignments > 0 ? Math.round((totalScore / maxPossibleScore) * 100) : 0,
+        canMarkAsCompleted: totalAssignments > 0 ? gradedAssignments === totalAssignments : true
+      }
+    };
+
+    return res.status(200).json({
+      success: true,
+      lesson: lessonDetail,
+    });
+
+  } catch (error) {
+    if (error.message === "Student not found") {
+      return res.status(404).json({
+        success: false,
+        error: "Student not found",
+      });
+    }
+
+    if (error.message === "Lesson not found") {
+      return res.status(404).json({
+        success: false,
+        error: "Lesson not found",
+      });
+    }
+
+    console.error("Error in getLessonDetailForStudent:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal Server Error",
+    });
+  }
+};
