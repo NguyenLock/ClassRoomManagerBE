@@ -122,12 +122,18 @@ exports.assignLesson = async ({ studentPhone, lessonId }) => {
       throw new Error("Lesson already assigned to this student");
     }
 
+    const assignmentsRef = db.collection("assignments");
+    const assignmentsQuery = await assignmentsRef.where("lessonId", "==", lessonId).get();
+    const hasAssignments = !assignmentsQuery.empty;
+    
+    const initialStatus = hasAssignments ? "pending" : "waiting";
+
     lessons.push({
       lessonId,
       title: lessonData.title,
       description: lessonData.description,
       assignedAt: new Date().toISOString(),
-      status: "pending",
+      status: initialStatus,
     });
 
     await studentsRef.doc(studentDoc.id).update({ lessons });
@@ -245,6 +251,53 @@ exports.deleteStudentByEmail = async ({ email }) => {
 
     const studentDoc = studentQuery.docs[0];
     await studentRef.doc(studentDoc.id).delete();
+  } catch (error) {
+    throw error;
+  }
+};
+
+exports.updateLessonStatusForAllStudents = async (lessonId) => {
+  try {
+    const lessonsRef = db.collection("lessons");
+    const lessonDoc = await lessonsRef.doc(lessonId).get();
+    
+    if (!lessonDoc.exists) {
+      throw new Error("Lesson not found");
+    }
+    
+    const lessonData = lessonDoc.data();
+    
+    const assignmentsRef = db.collection("assignments");
+    const assignmentsQuery = await assignmentsRef.where("lessonId", "==", lessonId).get();
+    const hasAssignments = !assignmentsQuery.empty;
+    
+    const newStatus = hasAssignments ? "pending" : "waiting";
+    
+    const studentsRef = db.collection("students");
+    const studentsSnapshot = await studentsRef.get();
+    
+    const updatePromises = [];
+    
+    studentsSnapshot.docs.forEach((studentDoc) => {
+      const studentData = studentDoc.data();
+      const lessons = studentData.lessons || [];
+      
+      const lessonIndex = lessons.findIndex(lesson => lesson.lessonId === lessonId);
+      
+      if (lessonIndex !== -1) {
+        if (lessons[lessonIndex].status !== "completed" && lessons[lessonIndex].status !== newStatus) {
+          lessons[lessonIndex].status = newStatus;
+          lessons[lessonIndex].updatedAt = new Date().toISOString();
+          
+          updatePromises.push(
+            studentsRef.doc(studentDoc.id).update({ lessons })
+          );
+        }
+      }
+    });
+    
+    await Promise.all(updatePromises);
+    return { updated: updatePromises.length };
   } catch (error) {
     throw error;
   }

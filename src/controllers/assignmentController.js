@@ -108,6 +108,12 @@ exports.deleteAssignment = async (req, res) => {
       assignmentId
     );
 
+    try {
+      await studentModel.updateLessonStatusForAllStudents(deletedAssignment.lessonId);
+    } catch (error) {
+      console.error("Error updating student lesson status after assignment deletion:", error);
+    }
+
     res.status(200).json({
       success: true,
       message: "Assignment deleted successfully",

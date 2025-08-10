@@ -35,6 +35,30 @@ exports.getMyLessons = async (req, res) => {
 
     const lessons = await lessonModel.getLessonsByStudentPhone(phoneNumber);
 
+    for (const lesson of lessons) {
+      try {
+        if (lesson.status === "completed") {
+          continue;
+        }
+
+        const lessonDetails = await lessonModel.getLessonById(lesson.lessonId);
+        
+        const assignmentsResult = await assignmentModel.getAssignmentsByLesson(lesson.lessonId, { page: 1, pageSize: 1000 });
+        const hasAssignments = assignmentsResult.assignments && assignmentsResult.assignments.length > 0;
+        
+        const correctStatus = hasAssignments ? "pending" : "waiting";
+        
+        if (lesson.status !== correctStatus) {
+          lesson.status = correctStatus;
+          lesson.updatedAt = new Date().toISOString();
+          
+          await lessonModel.updateLessonStatusForStudent(phoneNumber, lesson.lessonId, correctStatus);
+        }
+      } catch (error) {
+        console.error(`Error updating status for lesson ${lesson.lessonId}:`, error);
+      }
+    }
+
     if (includeProgress === 'true') {
       for (const lesson of lessons) {
         try {

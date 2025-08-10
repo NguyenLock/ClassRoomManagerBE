@@ -158,3 +158,43 @@ exports.getAllLessons = async () => {
     throw error;
   }
 };
+
+exports.updateLessonStatusForStudent = async (phoneNumber, lessonId, newStatus) => {
+  try {
+    const studentsRef = db.collection("students");
+    const studentQuery = await studentsRef
+      .where("phoneNumber", "==", phoneNumber)
+      .get();
+
+    if (studentQuery.empty) {
+      throw new Error("Student not found");
+    }
+
+    const studentDoc = studentQuery.docs[0];
+    const studentData = studentDoc.data();
+    const lessons = studentData.lessons || [];
+
+    const lessonIndex = lessons.findIndex(
+      (lesson) => lesson.lessonId === lessonId
+    );
+    
+    if (lessonIndex === -1) {
+      throw new Error("Lesson not found for this student");
+    }
+
+    if (lessons[lessonIndex].status === "completed") {
+      return lessons;
+    }
+
+    lessons[lessonIndex] = {
+      ...lessons[lessonIndex],
+      status: newStatus,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await studentsRef.doc(studentDoc.id).update({ lessons });
+    return lessons;
+  } catch (error) {
+    throw error;
+  }
+};
