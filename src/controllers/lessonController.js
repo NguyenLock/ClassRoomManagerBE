@@ -144,8 +144,30 @@ exports.markLessonDone = async (req, res) => {
       });
     }
 
+    // Get lesson details to check content
+    const lesson = await lessonModel.getLessonById(lessonId);
+    
+    if (!lesson) {
+      return res.status(404).json({
+        success: false,
+        message: "Lesson not found"
+      });
+    }
+
+    // Get assignments for validation
     const assignmentsResult = await assignmentModel.getAssignmentsByLesson(lessonId, { page: 1, pageSize: 1000 });
     const assignments = assignmentsResult.assignments;
+
+    // VALIDATION - Check if lesson has content
+    const hasDescription = lesson.description && lesson.description.trim() !== '';
+    const hasAssignments = assignments && assignments.length > 0;
+
+    if (!hasDescription && !hasAssignments) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot complete empty lesson. Lesson must have content or assignments."
+      });
+    }
 
     if (assignments.length > 0) {
       for (const assignment of assignments) {
